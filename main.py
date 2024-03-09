@@ -1,6 +1,14 @@
 import tkinter as tk
 import ttkbootstrap as ttk
 from ttkbootstrap.constants import *
+from openai import OpenAI
+
+def read_file(filename):
+    with open(filename, 'r') as f:
+        text = f.read().strip()
+    return text
+
+client = OpenAI(api_key=read_file("./OPENAI_KEY"))
 
 def on_mousewheel(event):
     canvas.yview_scroll(-1 * (event.delta // 120), "units")
@@ -12,13 +20,29 @@ def add_textbox():
     new_row_idx = len(textboxes) + 1
     label = ttk.Label(canvas_frame, text=f"Line {new_row_idx}")
     label.grid(row=new_row_idx, column=0, padx=5, pady=5)
-    textbox = tk.Text(canvas_frame, height=5, width=30)
+    textbox = tk.Text(canvas_frame, height=3, width=30)
     textbox.grid(row=new_row_idx, column=1, padx=5, pady=5)
     textboxes.append(textbox)
 
 def submit():
+    base_prompt = read_file('./BASE_PROMPT')
+    text_lines = []
     for index, textbox in enumerate(textboxes):
-        print(f"Textbox {index + 1}: {textbox.get('1.0', tk.END).strip()}")
+        text_lines.append(f"{index + 1}. {textbox.get('1.0', tk.END)}\n")
+
+    response = client.chat.completions.create(
+    model="gpt-3.5-turbo",
+    response_format={ "type": "json_object" },
+    messages=[
+        {"role": "system", "content": base_prompt},
+        {"role": "user", "content": "".join(text_lines)}
+    ]
+    )
+
+    print(response.choices[0].message.content)
+
+
+
 
 # Create the main window
 root = ttk.Window()
@@ -56,7 +80,7 @@ initial_label = ttk.Label(canvas_frame, text="Line 1")
 initial_label.grid(row=1, column=0, padx=5, pady=5)
 
 # Create a textbox for user input
-initial_textbox = ttk.Text(canvas_frame, height=5, width=30)
+initial_textbox = ttk.Text(canvas_frame, height=3, width=30)
 initial_textbox.grid(row=1, column=1, padx=5, pady=5)
 textboxes.append(initial_textbox)
 
