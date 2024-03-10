@@ -2,6 +2,7 @@ import tkinter as tk
 import ttkbootstrap as ttk
 from ttkbootstrap.constants import *
 from openai import OpenAI
+import json
 
 def read_file(filename):
     with open(filename, 'r') as f:
@@ -28,7 +29,7 @@ def submit():
     base_prompt = read_file('./BASE_PROMPT')
     text_lines = []
     for index, textbox in enumerate(textboxes):
-        text_lines.append(f"{index + 1}. {textbox.get('1.0', tk.END)}\n")
+        text_lines.append(f"{index + 1}. {{ {textbox.get('1.0', tk.END)} }}\n")
 
     response = client.chat.completions.create(
     model="gpt-3.5-turbo",
@@ -39,9 +40,12 @@ def submit():
     ]
     )
 
-    print(response.choices[0].message.content)
-
-
+    translated_data = json.loads(response.choices[0].message.content)
+    for key, value in translated_data.items():
+        output_textbox = ttk.Text(canvas_frame, height=3, width=30)
+        output_textbox.insert(tk.END, value)
+        output_textbox.grid(row=int(key), column=2, padx=5, pady=5)
+    
 
 
 # Create the main window
