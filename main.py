@@ -11,6 +11,16 @@ def read_file(filename):
 
 client = OpenAI(api_key=read_file("./OPENAI_KEY"))
 
+global ai_model
+ai_model = "gpt-3.5-turbo"
+
+# Create lists to keep track of GUI elements
+textboxes = []
+output_textboxes = []
+labels = []
+buttons = [] # Button Index: 0 Reset, 1 Submit, 2 Add Line, 3 Model
+
+
 def on_mousewheel(event):
     canvas.yview_scroll(-1 * (event.delta // 120), "units")
 
@@ -34,7 +44,7 @@ def submit():
         text_lines.append(f"{index + 1}. {{ {textbox.get('1.0', tk.END)} }}\n")
 
     response = client.chat.completions.create(
-    model="gpt-3.5-turbo",
+    model=ai_model,
     response_format={ "type": "json_object" },
     messages=[
         {"role": "system", "content": base_prompt},
@@ -62,10 +72,25 @@ def reset():
     textboxes.clear()
     add_textbox()
 
+# Toggle between GPT 3.5 Turbo and 4 Turbo
+def switch_model():
+    global ai_model
+    m_button = buttons[3]
+    m_button.destroy()
+    if ai_model == "gpt-3.5-turbo":
+        ai_model = "gpt-4-turbo-preview"
+        m_button = ttk.Button(canvas_frame, text="Switch to GPT 3.5 Turbo", command=switch_model, bootstyle=SECONDARY)
+        m_button.grid(row=0, column=3, padx=5, pady=5)
+    else:
+        ai_model = "gpt-3.5-turbo"
+        m_button = ttk.Button(canvas_frame, text="Switch to GPT 4 Turbo", command=switch_model, bootstyle=SECONDARY)
+        m_button.grid(row=0, column=3, padx=5, pady=5)
+    buttons[3] = m_button
+
 # Create the main window
 root = ttk.Window()
 root.title("Open AI Block Translator")
-root.minsize(480, 360)
+root.minsize(640, 480)
 
 # Create a Canvas widget with a vertical scrollbar
 canvas = ttk.Canvas(root)
@@ -86,18 +111,15 @@ canvas_frame.bind("<Configure>", on_canvas_configure)
 # Bind mousewheel event to canvas for scrolling
 canvas.bind("<MouseWheel>", on_mousewheel)
 
-# Create lists to keep track of GUI elements
-textboxes = []
-output_textboxes = []
-labels = []
-
 # Create a button to reset input
-submit_button = ttk.Button(canvas_frame, text="Reset", command=reset, bootstyle=DANGER)
-submit_button.grid(row=0, column=0, padx=5, pady=5)
+reset_button = ttk.Button(canvas_frame, text="Reset", command=reset, bootstyle=DANGER)
+reset_button.grid(row=0, column=0, padx=5, pady=5)
+buttons.append(reset_button)
 
 # Create a button to submit the input
 submit_button = ttk.Button(canvas_frame, text="Submit", command=submit, bootstyle=PRIMARY)
 submit_button.grid(row=0, column=1, columnspan=2, padx=5, pady=5)
+buttons.append(submit_button)
 
 # Create a label for the initial textbox
 initial_label = ttk.Label(canvas_frame, text="Line 1")
@@ -111,6 +133,12 @@ textboxes.append(initial_textbox)
 # Create a button to add more textboxes
 add_button = ttk.Button(canvas_frame, text="Add Line", command=add_textbox, bootstyle=SUCCESS)
 add_button.grid(row=0, column=2, padx=5, pady=5)
+buttons.append(add_button)
+
+# Create a button to toggle between GPT 3.5 Turbo and GPT 4 Turbo
+model_button = ttk.Button(canvas_frame, text="Switch to GPT 4 Turbo", command=switch_model, bootstyle=SECONDARY)
+model_button.grid(row=0, column=3, padx=5, pady=5)
+buttons.append(model_button)
 
 # Run the application
 root.mainloop()
