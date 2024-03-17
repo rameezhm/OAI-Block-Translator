@@ -1,0 +1,8 @@
+{
+    "OPENAI_KEY": "abcdefg",
+    "speakers": [
+        "None",
+        "Bob",
+        "Alice"
+    ]
+}

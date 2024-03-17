@@ -36,6 +36,21 @@ def add_textbox():
     textbox.grid(row=new_row_idx, column=1, padx=5, pady=5)
     textboxes.append(textbox)
 
+def update_num_textboxes(event):
+    current_boxes = len(textboxes)
+    num = int(num_textboxes.get())
+    # delete excess boxes
+    if num < current_boxes:
+        for i in range(current_boxes - 1, num - 1, -1):
+            textboxes[i].destroy()
+            labels[i].destroy()
+    # add more text boxes
+    elif num > current_boxes:
+        for i in range(current_boxes, num):
+            add_textbox()
+    else:
+        return
+
 # Translates text blocks and renders output text boxes
 def submit():
     base_prompt = read_file('./BASE_PROMPT')
@@ -60,17 +75,13 @@ def submit():
         output_textbox.grid(row=int(key), column=2, padx=5, pady=5)
         output_textboxes.append(output_textbox)
     
-# Resets text inputs and text boxes
+# Clears text inputs and deletes output text boxes
 def reset():
     for box in textboxes:
-        box.destroy()
+        box.delete(1.0, "end")
     for box in output_textboxes:
         box.destroy()
-    for l in labels:
-        l.destroy()
     output_textboxes.clear()
-    textboxes.clear()
-    add_textbox()
 
 # Toggle between GPT 3.5 Turbo and 4 Turbo
 def switch_model():
@@ -124,16 +135,22 @@ buttons.append(submit_button)
 # Create a label for the initial textbox
 initial_label = ttk.Label(canvas_frame, text="Line 1")
 initial_label.grid(row=1, column=0, padx=5, pady=5)
+labels.append(initial_label)
 
-# Create a textbox for user input
+# Create initial textboxes for user input
 initial_textbox = ttk.Text(canvas_frame, height=3, width=30)
 initial_textbox.grid(row=1, column=1, padx=5, pady=5)
 textboxes.append(initial_textbox)
+add_textbox()
+add_textbox()
 
-# Create a button to add more textboxes
-add_button = ttk.Button(canvas_frame, text="Add Line", command=add_textbox, bootstyle=SUCCESS)
-add_button.grid(row=0, column=2, padx=5, pady=5)
-buttons.append(add_button)
+# Create a combobox to set the number of textboxes
+options = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]  # Change this list as needed for the desired number of textboxes
+num_textboxes = tk.StringVar()
+num_textboxes.set(options[2])  # Set default value to 3
+combo_box = ttk.Combobox(canvas_frame, textvariable=num_textboxes, values=options, bootstyle=SUCCESS)
+combo_box.grid(row=0, column=2, padx=10, pady=5)
+combo_box.bind("<<ComboboxSelected>>", update_num_textboxes)
 
 # Create a button to toggle between GPT 3.5 Turbo and GPT 4 Turbo
 model_button = ttk.Button(canvas_frame, text="Switch to GPT 4 Turbo", command=switch_model, bootstyle=SECONDARY)
