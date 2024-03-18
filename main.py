@@ -9,7 +9,8 @@ def read_file(filename):
         text = f.read().strip()
     return text
 
-client = OpenAI(api_key=read_file("./OPENAI_KEY"))
+config_json = json.loads(read_file("./config.json"))
+client = OpenAI(api_key=config_json["OPENAI_KEY"])
 
 global ai_model
 ai_model = "gpt-3.5-turbo"
@@ -19,6 +20,7 @@ textboxes = []
 output_textboxes = []
 labels = []
 buttons = [] # Button Index: 0 Reset, 1 Submit, 2 Add Line, 3 Model
+speaker_boxes = []
 
 
 def on_mousewheel(event):
@@ -35,6 +37,7 @@ def add_textbox():
     textbox = tk.Text(canvas_frame, height=3, width=30)
     textbox.grid(row=new_row_idx, column=1, padx=5, pady=5)
     textboxes.append(textbox)
+    add_speaker_box()
 
 def update_num_textboxes(event):
     current_boxes = len(textboxes)
@@ -44,6 +47,7 @@ def update_num_textboxes(event):
         for i in range(current_boxes - 1, num - 1, -1):
             textboxes[i].destroy()
             labels[i].destroy()
+            speaker_boxes[i].destroy()
     # add more text boxes
     elif num > current_boxes:
         for i in range(current_boxes, num):
@@ -51,19 +55,27 @@ def update_num_textboxes(event):
     else:
         return
 
+def add_speaker_box():
+    speaker_options = config_json["speakers"]
+    speaker = tk.StringVar()
+    speaker.set(speaker_options[0])
+    speaker_box = ttk.Combobox(canvas_frame, textvariable=speaker, values=speaker_options)
+    speaker_box.grid(row=len(speaker_boxes) + 1, column=2, padx=10, pady=5)
+    speaker_boxes.append(speaker_box)
+
 # Translates text blocks and renders output text boxes
 def submit():
     base_prompt = read_file('./BASE_PROMPT')
-    text_lines = []
+    translation_json = {"blocks": []}
     for index, textbox in enumerate(textboxes):
-        text_lines.append(f"{index + 1}. {{ {textbox.get('1.0', tk.END)} }}\n")
+        translation_json["blocks"].append({"speaker": speaker_boxes[index].get(), "text": textbox.get('1.0', tk.END)})
 
     response = client.chat.completions.create(
     model=ai_model,
     response_format={ "type": "json_object" },
     messages=[
         {"role": "system", "content": base_prompt},
-        {"role": "user", "content": "".join(text_lines)}
+        {"role": "user", "content": json.dumps(translation_json)}
     ]
     )
 
@@ -72,7 +84,7 @@ def submit():
     for key, value in translated_data.items():
         output_textbox = ttk.Text(canvas_frame, height=3, width=30)
         output_textbox.insert(tk.END, value)
-        output_textbox.grid(row=int(key), column=2, padx=5, pady=5)
+        output_textbox.grid(row=int(key), column=3, padx=5, pady=5)
         output_textboxes.append(output_textbox)
     
 # Clears text inputs and deletes output text boxes
@@ -101,7 +113,7 @@ def switch_model():
 # Create the main window
 root = ttk.Window()
 root.title("Open AI Block Translator")
-root.minsize(640, 480)
+root.minsize(720, 480)
 
 # Create a Canvas widget with a vertical scrollbar
 canvas = ttk.Canvas(root)
@@ -129,7 +141,7 @@ buttons.append(reset_button)
 
 # Create a button to submit the input
 submit_button = ttk.Button(canvas_frame, text="Submit", command=submit, bootstyle=PRIMARY)
-submit_button.grid(row=0, column=1, columnspan=2, padx=5, pady=5)
+submit_button.grid(row=0, column=1, padx=5, pady=5)
 buttons.append(submit_button)
 
 # Create a label for the initial textbox
@@ -151,6 +163,9 @@ num_textboxes.set(options[2])  # Set default value to 3
 combo_box = ttk.Combobox(canvas_frame, textvariable=num_textboxes, values=options, bootstyle=SUCCESS)
 combo_box.grid(row=0, column=2, padx=10, pady=5)
 combo_box.bind("<<ComboboxSelected>>", update_num_textboxes)
+
+# Create a combobox for the current speaker
+add_speaker_box()
 
 # Create a button to toggle between GPT 3.5 Turbo and GPT 4 Turbo
 model_button = ttk.Button(canvas_frame, text="Switch to GPT 4 Turbo", command=switch_model, bootstyle=SECONDARY)

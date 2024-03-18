@@ -6,8 +6,22 @@ Use every block given to you as part of the overall context for the translation.
 Using the entirety of the foreign text as context, translate each block to English.
 The translation MUST be returned in JSON format, with each translated block as its own entry.
 The returned number of blocks MUST match the number of blocks provided.
-You will receive the blocks that need to be translated in numbered block format like so:
-1. {text}
-2. {more text}
-3. {even more text, etc.}
+You will receive the blocks that need to be translated in JSON format like so:
+{
+    "blocks": [
+        {
+            "speaker": "Alice",
+            "text": "untranslated text"
+        },
+        {
+            "speaker": "Bob",
+            "text": "more untranslated text"
+        }
+    ]
+}
+You should return the translation in the JSON format below:
+{
+    "1": "Alice's translated text",
+    "2": "Bob's translated text"
+}
 Please translate the blocks I provide below:
